@@ -158,6 +158,11 @@ The file went through `sfcre-ingest` once into a Salesforce Developer org, then 
 | Records in the org after the run | 290 properties, 272 accounts | 290 properties, 272 accounts (0 new) |
 | Run time | about 3.9 minutes | |
 
+| Alert test (scheduled stand-in, missing Drive file) | Result |
+|---|---|
+| Download failed and the error workflow ran | 1 of 1 |
+| Discord message had workflow name, node, message and link | 1 of 1 |
+
 | Lease test | Result |
 |---|---|
 | Leases ending within 365 days that got a priority and a task | 15 of 15 (5 Hot, 10 Warm) |
@@ -165,7 +170,7 @@ The file went through `sfcre-ingest` once into a Salesforce Developer org, then 
 The 20 parcels with variant owner spellings ended up on 6 Accounts. The 5 parcels with blank owners ended up on the single "Unknown Owner" Account.
 
 ### What did not go perfectly
-- **The alert path was only checked up to the error.** In pinned test runs, the `Failed` status and the Stop step worked as designed, and the error handler read the right channel from settings. n8n does not send failures from manual runs to the error workflow. Because of that, two things were not verified: the Discord message body, and a real missing-file failure on a scheduled run.
+- **The alert path was checked with a stand-in workflow.** n8n does not send failures from manual runs to the error workflow. So a scheduled stand-in workflow ran the same Google Drive download on a missing file id. The download failed with "File not found", and `sfcre-error-handler` posted one Discord message with the workflow name, the failing node, the error message and the execution link. `sfcre-ingest` itself has not failed on a scheduled run.
 - **The daily lease Flow** is deployed and active, but it had not reached its first scheduled run during testing. The record-triggered Flow applies the same rules and was tested on all 60 leases.
 - **Scope.** Synthetic data, one Developer org and one run per case. Treat these results as a regression baseline, not a measure on real county data.
 
