@@ -11,7 +11,7 @@
 | **Scale** | 3 n8n workflows (22 nodes); 4 custom objects, plus custom fields on Account and Opportunity; 3 Flows; 3 permission sets; 4 reports and 1 dashboard |
 | **Stack** | Salesforce (SFDX, Flow Builder, duplicate and matching rules), n8n, Google Drive, n8n Data Tables, Discord |
 | **Status** | Tested on a 300-row synthetic county file and 60 synthetic leases in a Salesforce Developer org (results below). It has not been run on real county data. |
-| **Results** | 290 of 290 unique parcels saved with their owners (synthetic). All 18 rows with planted problems were flagged for review. The second run created 0 new records. |
+| **Results** | 290 of 290 unique parcels saved with their owners (synthetic). 18 of 18 rows with planted problems were flagged for review. The second run created 0 new records. |
 
 ---
 
