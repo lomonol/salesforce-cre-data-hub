@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>68.0</apiVersion>
+    <description>Daily sweep on Lease__c: blank priority and ending within 365 days becomes Warm (Hot within 180) with one Task; Warm and ending within 180 days becomes Hot with no new Task. Companion to Lease_Expiry_Alert.</description>
+    <environments>Default</environments>
+    <interviewLabel>Lease Expiry Daily {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Lease Expiry Daily</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value><stringValue>LightningFlowBuilder</stringValue></value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <formulas>
+        <name>fLimit180</name>
+        <dataType>Date</dataType>
+        <expression>TODAY() + 180</expression>
+    </formulas>
+    <formulas>
+        <name>fLimit365</name>
+        <dataType>Date</dataType>
+        <expression>TODAY() + 365</expression>
+    </formulas>
+    <formulas>
+        <name>fPriority</name>
+        <dataType>String</dataType>
+        <expression>IF({!$Record.Lease_End__c} &lt;= TODAY() + 180, "Hot", "Warm")</expression>
+    </formulas>
+    <formulas>
+        <name>fTaskPriority</name>
+        <dataType>String</dataType>
+        <expression>IF({!$Record.Lease_End__c} &lt;= TODAY() + 180, "High", "Normal")</expression>
+    </formulas>
+    <formulas>
+        <name>fOwnerId</name>
+        <dataType>String</dataType>
+        <expression>BLANKVALUE({!$Record.Property__r.Owner__r.OwnerId}, BLANKVALUE({!$Record.Property__r.OwnerId}, {!$User.Id}))</expression>
+    </formulas>
+    <formulas>
+        <name>fSubject</name>
+        <dataType>String</dataType>
+        <expression>"Lease ends " &amp; CASE(MONTH({!$Record.Lease_End__c}),1,"Jan",2,"Feb",3,"Mar",4,"Apr",5,"May",6,"Jun",7,"Jul",8,"Aug",9,"Sep",10,"Oct",11,"Nov","Dec") &amp; " " &amp; TEXT(DAY({!$Record.Lease_End__c})) &amp; ", " &amp; TEXT(YEAR({!$Record.Lease_End__c})) &amp; ": call about renewal or relocation"</expression>
+    </formulas>
+    <formulas>
+        <name>fDue</name>
+        <dataType>Date</dataType>
+        <expression>TODAY() + 3</expression>
+    </formulas>
+    <decisions>
+        <name>Which_Case</name>
+        <label>Which Case</label>
+        <locationX>374</locationX>
+        <locationY>288</locationY>
+        <defaultConnectorLabel>None</defaultConnectorLabel>
+        <rules>
+            <name>Blank_To_Priority</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Prospect_Priority__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Lease_End__c</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue><elementReference>fLimit365</elementReference></rightValue>
+            </conditions>
+            <connector><targetReference>Set_Priority</targetReference></connector>
+            <label>Blank to Hot or Warm</label>
+        </rules>
+        <rules>
+            <name>Warm_To_Hot</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Prospect_Priority__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><stringValue>Warm</stringValue></rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Lease_End__c</leftValueReference>
+                <operator>LessThanOrEqualTo</operator>
+                <rightValue><elementReference>fLimit180</elementReference></rightValue>
+            </conditions>
+            <connector><targetReference>Make_Hot</targetReference></connector>
+            <label>Warm to Hot</label>
+        </rules>
+    </decisions>
+    <recordUpdates>
+        <name>Set_Priority</name>
+        <label>Set Priority</label>
+        <locationX>176</locationX>
+        <locationY>396</locationY>
+        <connector><targetReference>Create_Task</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </filters>
+        <inputAssignments>
+            <field>Prospect_Priority__c</field>
+            <value><elementReference>fPriority</elementReference></value>
+        </inputAssignments>
+        <object>Lease__c</object>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Make_Hot</name>
+        <label>Make Hot</label>
+        <locationX>572</locationX>
+        <locationY>396</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </filters>
+        <inputAssignments>
+            <field>Prospect_Priority__c</field>
+            <value><stringValue>Hot</stringValue></value>
+        </inputAssignments>
+        <object>Lease__c</object>
+    </recordUpdates>
+    <recordCreates>
+        <name>Create_Task</name>
+        <label>Create Task</label>
+        <locationX>176</locationX>
+        <locationY>504</locationY>
+        <inputAssignments>
+            <field>ActivityDate</field>
+            <value><elementReference>fDue</elementReference></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value><elementReference>fOwnerId</elementReference></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value><elementReference>fTaskPriority</elementReference></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value><stringValue>Not Started</stringValue></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Subject</field>
+            <value><elementReference>fSubject</elementReference></value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhatId</field>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </inputAssignments>
+        <object>Task</object>
+    </recordCreates>
+    <start>
+        <locationX>248</locationX>
+        <locationY>0</locationY>
+        <connector><targetReference>Which_Case</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Lease_End__c</field>
+            <operator>IsNull</operator>
+            <value><booleanValue>false</booleanValue></value>
+        </filters>
+        <object>Lease__c</object>
+        <schedule>
+            <frequency>Daily</frequency>
+            <startDate>2026-11-22</startDate>
+            <startTime>02:00:00.000Z</startTime>
+        </schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

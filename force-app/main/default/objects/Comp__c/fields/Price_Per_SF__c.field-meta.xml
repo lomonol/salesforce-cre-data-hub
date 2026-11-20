@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Price_Per_SF__c</fullName>
+    <externalId>false</externalId>
+    <formula>IF(OR(ISBLANK(Sale_Price__c), ISBLANK(Property__r.Building_SF__c), Property__r.Building_SF__c = 0), NULL, Sale_Price__c / Property__r.Building_SF__c)</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Price Per SF</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <trackTrending>false</trackTrending>
+    <type>Currency</type>
+</CustomField>

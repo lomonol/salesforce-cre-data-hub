@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">
+    <backgroundEndColor>#FFFFFF</backgroundEndColor>
+    <backgroundFadeDirection>Diagonal</backgroundFadeDirection>
+    <backgroundStartColor>#FFFFFF</backgroundStartColor>
+    <dashboardType>SpecifiedUser</dashboardType>
+    <description>Phase 1 data quality and lease pipeline.</description>
+    <isGridLayout>false</isGridLayout>
+    <leftSection>
+        <columnSize>Medium</columnSize>
+        <components>
+            <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+            <chartSummary><axisBinding>y</axisBinding><column>RowCount</column></chartSummary>
+            <componentType>Donut</componentType>
+            <displayUnits>Auto</displayUnits>
+            <drillEnabled>false</drillEnabled>
+            <drillToDetailEnabled>false</drillToDetailEnabled>
+            <enableHover>true</enableHover>
+            <expandOthers>true</expandOthers>
+            <groupingColumn>Property__c.Property_Type__c</groupingColumn>
+            <legendPosition>Right</legendPosition>
+            <report>CRE_Data_Hub_Reports/Properties_by_Type_and_City</report>
+            <chartAxisRange>Auto</chartAxisRange>
+            <sortBy>RowLabelAscending</sortBy>
+            <showPercentage>false</showPercentage>
+            <showTotal>true</showTotal>
+            <showValues>true</showValues>
+            <title>Properties by Type</title>
+        </components>
+        <components>
+            <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+            <chartSummary><axisBinding>y</axisBinding><column>RowCount</column></chartSummary>
+            <componentType>Bar</componentType>
+            <displayUnits>Auto</displayUnits>
+            <drillEnabled>false</drillEnabled>
+            <drillToDetailEnabled>false</drillToDetailEnabled>
+            <enableHover>true</enableHover>
+            <expandOthers>true</expandOthers>
+            <groupingColumn>Integration_Log__c.Status__c</groupingColumn>
+            <legendPosition>Bottom</legendPosition>
+            <report>CRE_Data_Hub_Reports/Ingest_Runs_by_Status</report>
+            <chartAxisRange>Auto</chartAxisRange>
+            <sortBy>RowLabelAscending</sortBy>
+            <showPercentage>false</showPercentage>
+            <showValues>true</showValues>
+            <title>Ingest Runs by Status</title>
+        </components>
+    </leftSection>
+    <middleSection><columnSize>Medium</columnSize></middleSection>
+    <rightSection>
+        <columnSize>Medium</columnSize>
+        <components>
+            <componentType>Metric</componentType>
+            <displayUnits>Auto</displayUnits>
+            <drillEnabled>false</drillEnabled>
+            <drillToDetailEnabled>false</drillToDetailEnabled>
+            <indicatorBreakpoint1>0</indicatorBreakpoint1>
+            <indicatorBreakpoint2>0</indicatorBreakpoint2>
+            <indicatorHighColor>#C23934</indicatorHighColor>
+            <indicatorLowColor>#54C254</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <metricLabel>Needing review</metricLabel>
+            <report>CRE_Data_Hub_Reports/Properties_Needing_Review</report>
+            <title>Properties Needing Review</title>
+        </components>
+        <components>
+            <componentType>Table</componentType>
+            <dashboardTableColumn><column>CUST_NAME</column><sortBy>RowLabelAscending</sortBy></dashboardTableColumn>
+            <dashboardTableColumn><column>Property__c.City__c</column></dashboardTableColumn>
+            <dashboardTableColumn><column>Property__c.Review_Reason__c</column></dashboardTableColumn>
+            <displayUnits>Auto</displayUnits>
+            <indicatorBreakpoint1>0</indicatorBreakpoint1>
+            <indicatorBreakpoint2>0</indicatorBreakpoint2>
+            <indicatorHighColor>#C23934</indicatorHighColor>
+            <indicatorLowColor>#54C254</indicatorLowColor>
+            <indicatorMiddleColor>#FFB75D</indicatorMiddleColor>
+            <drillEnabled>false</drillEnabled>
+            <drillToDetailEnabled>false</drillToDetailEnabled>
+            <report>CRE_Data_Hub_Reports/Properties_Needing_Review</report>
+            <title>Review Queue</title>
+        </components>
+        <components>
+            <autoselectColumnsFromReport>false</autoselectColumnsFromReport>
+            <chartSummary><axisBinding>y</axisBinding><column>RowCount</column></chartSummary>
+            <componentType>ColumnStacked</componentType>
+            <displayUnits>Auto</displayUnits>
+            <drillEnabled>false</drillEnabled>
+            <drillToDetailEnabled>false</drillToDetailEnabled>
+            <enableHover>true</enableHover>
+            <expandOthers>true</expandOthers>
+            <groupingColumn>Lease__c.Lease_End__c</groupingColumn>
+            <groupingColumn>Lease__c.Prospect_Priority__c</groupingColumn>
+            <legendPosition>Bottom</legendPosition>
+            <report>CRE_Data_Hub_Reports/Leases_by_Priority_and_Expiry_Month</report>
+            <chartAxisRange>Auto</chartAxisRange>
+            <sortBy>RowLabelAscending</sortBy>
+            <showPercentage>false</showPercentage>
+            <showValues>false</showValues>
+            <title>Leases by Expiry Month and Priority</title>
+        </components>
+    </rightSection>
+    <runningUser>REPLACE_WITH_ORG_USERNAME</runningUser>
+    <textColor>#000000</textColor>
+    <title>Data Hub: Phase 1</title>
+    <titleColor>#000000</titleColor>
+    <titleSize>12</titleSize>
+</Dashboard>

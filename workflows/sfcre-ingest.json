@@ -1,0 +1,350 @@
+{
+  "name": "sfcre-ingest",
+  "nodes": [
+    {
+      "id": "3e3c00c8-cd43-475d-bfa9-61131c9be5b4",
+      "name": "Every Monday",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 6,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6ff1e9bd-0683-4db2-bdc5-5048e534cf6c",
+      "name": "Get settings",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_DATA_TABLE_ID"
+        },
+        "returnAll": false,
+        "limit": 1
+      }
+    },
+    {
+      "id": "219d6e4d-27d9-4f1c-9256-7cc576dbd414",
+      "name": "Download county CSV",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "authentication": "oAuth2",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.county_file_id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "f3d3ea7d-e015-4413-b35d-3cbf888cfe82",
+      "name": "Parse CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true
+        }
+      }
+    },
+    {
+      "id": "cc86b119-3fd7-4e1c-ae5d-4de075cbe00c",
+      "name": "Map county fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        96
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f-apn",
+              "name": "apn",
+              "value": "={{ $json.APN }}",
+              "type": "string"
+            },
+            {
+              "id": "f-street",
+              "name": "street",
+              "value": "={{ $json.SITUS_ADDRESS }}",
+              "type": "string"
+            },
+            {
+              "id": "f-city",
+              "name": "city",
+              "value": "={{ $json.SITUS_CITY }}",
+              "type": "string"
+            },
+            {
+              "id": "f-state",
+              "name": "state",
+              "value": "={{ $json.SITUS_STATE }}",
+              "type": "string"
+            },
+            {
+              "id": "f-zip",
+              "name": "zip",
+              "value": "={{ $json.SITUS_ZIP }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ptype",
+              "name": "property_type",
+              "value": "={{ $json.USE_CODE }}",
+              "type": "string"
+            },
+            {
+              "id": "f-bsf",
+              "name": "building_sf",
+              "value": "={{ Number($json.BLDG_SQFT) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f-yb",
+              "name": "year_built",
+              "value": "={{ Number($json.YR_BUILT) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f-oname",
+              "name": "owner_name",
+              "value": "={{ $json.OWNER_NAME }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ostreet",
+              "name": "owner_mail_street",
+              "value": "={{ $json.MAIL_ADDRESS }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ocity",
+              "name": "owner_mail_city",
+              "value": "={{ $json.MAIL_CITY }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ostate",
+              "name": "owner_mail_state",
+              "value": "={{ $json.MAIL_STATE }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ozip",
+              "name": "owner_mail_zip",
+              "value": "={{ $json.MAIL_ZIP }}",
+              "type": "string"
+            },
+            {
+              "id": "f-ophone",
+              "name": "owner_phone",
+              "value": "={{ $json.OWNER_PHONE }}",
+              "type": "string"
+            },
+            {
+              "id": "f-source",
+              "name": "source",
+              "value": "county",
+              "type": "string"
+            },
+            {
+              "id": "f-tlabel",
+              "name": "test_label",
+              "value": "={{ $json.test_label || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f-batch",
+              "name": "batch_id",
+              "value": "={{ 'county-' + $execution.id + ($json.test_label ? '-' + $json.test_label : '') }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7cda2982-5a55-4086-a807-3794e85e9c80",
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c2937be8-b36f-437c-b5c6-ef15c79cff84",
+      "name": "Call upsert",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1760,
+        300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "WORKFLOW_ID_sfcre-upsert"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "apn": "={{ $json.apn }}",
+            "street": "={{ $json.street }}",
+            "city": "={{ $json.city }}",
+            "state": "={{ $json.state }}",
+            "zip": "={{ $json.zip }}",
+            "property_type": "={{ $json.property_type }}",
+            "building_sf": "={{ $json.building_sf }}",
+            "year_built": "={{ $json.year_built }}",
+            "owner_name": "={{ $json.owner_name }}",
+            "owner_mail_street": "={{ $json.owner_mail_street }}",
+            "owner_mail_city": "={{ $json.owner_mail_city }}",
+            "owner_mail_state": "={{ $json.owner_mail_state }}",
+            "owner_mail_zip": "={{ $json.owner_mail_zip }}",
+            "owner_phone": "={{ $json.owner_phone }}",
+            "source": "={{ $json.source }}",
+            "batch_id": "={{ $json.batch_id }}",
+            "test_label": "={{ $json.test_label }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday": {
+      "main": [
+        [
+          {
+            "node": "Get settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get settings": {
+      "main": [
+        [
+          {
+            "node": "Download county CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download county CSV": {
+      "main": [
+        [
+          {
+            "node": "Parse CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CSV": {
+      "main": [
+        [
+          {
+            "node": "Map county fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "Get settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map county fields": {
+      "main": [
+        [
+          {
+            "node": "Call upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "WORKFLOW_ID_sfcre-error-handler"
+  },
+  "active": false
+}

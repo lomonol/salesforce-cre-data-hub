@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns><field>CUST_NAME</field></columns>
+    <columns><field>Property__c.APN__c</field></columns>
+    <columns><field>Property__c.City__c</field></columns>
+    <columns><field>Property__c.Review_Reason__c</field></columns>
+    <columns><field>Property__c.Owner__c</field></columns>
+    <description>Properties flagged Needs Review.</description>
+    <filter>
+        <criteriaItems>
+            <column>Property__c.Needs_Review__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>1</value>
+        </criteriaItems>
+    </filter>
+    <format>Tabular</format>
+    <name>Properties Needing Review</name>
+    <reportType>CustomEntity$Property__c</reportType>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+</Report>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Error_Sample__c</fullName>
+    <externalId>false</externalId>
+    <label>Error Sample</label>
+    <length>2000</length>
+    <visibleLines>5</visibleLines>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+</CustomField>

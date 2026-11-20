@@ -1,0 +1,99 @@
+{
+  "name": "sfcre-error-handler",
+  "nodes": [
+    {
+      "id": "ed5663a8-07a4-4bf1-b940-561bf9997e96",
+      "name": "On error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "bb7a5c69-5946-49f6-8d38-82047209b29e",
+      "name": "Get settings",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_DATA_TABLE_ID"
+        },
+        "returnAll": false,
+        "limit": 1
+      }
+    },
+    {
+      "id": "86f5ad0b-cb6d-4f1d-9958-8a7812c99e6b",
+      "name": "Alert",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "authentication": "botToken",
+        "resource": "message",
+        "operation": "send",
+        "guildId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.discord_guild_id }}"
+        },
+        "sendTo": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.discord_channel_id }}"
+        },
+        "content": "=⚠️ {{ $('On error').item.json.workflow.name }} failed at {{ $('On error').item.json.execution.lastNodeExecuted }}: {{ $('On error').item.json.execution.error.message }} — {{ $('On error').item.json.execution.url }}"
+      },
+      "credentials": {
+        "discordBotApi": {
+          "id": "REPLACE_ME",
+          "name": "Discord Bot account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On error": {
+      "main": [
+        [
+          {
+            "node": "Get settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get settings": {
+      "main": [
+        [
+          {
+            "node": "Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "active": false
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Source__c</fullName>
+    <externalId>false</externalId>
+    <label>Source</label>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>county</fullName>
+                <default>false</default>
+                <label>county</label>
+            </value>
+            <value>
+                <fullName>listings</fullName>
+                <default>false</default>
+                <label>listings</label>
+            </value>
+            <value>
+                <fullName>broker_sheet</fullName>
+                <default>false</default>
+                <label>broker_sheet</label>
+            </value>
+            <value>
+                <fullName>manual</fullName>
+                <default>false</default>
+                <label>manual</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+</CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Lease_End_After_Start</fullName>
+    <active>true</active>
+    <description>Lease end must not be before lease start when both are set.</description>
+    <errorConditionFormula>AND(NOT(ISBLANK(Lease_Start__c)), NOT(ISBLANK(Lease_End__c)), Lease_End__c &lt; Lease_Start__c)</errorConditionFormula>
+    <errorDisplayField>Lease_End__c</errorDisplayField>
+    <errorMessage>Lease End must be on or after Lease Start.</errorMessage>
+</ValidationRule>

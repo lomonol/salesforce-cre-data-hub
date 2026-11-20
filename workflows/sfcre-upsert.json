@@ -1,0 +1,792 @@
+{
+  "name": "sfcre-upsert",
+  "nodes": [
+    {
+      "id": "90aebf40-88a2-4e63-967a-234472110984",
+      "name": "When called",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "apn",
+              "type": "string"
+            },
+            {
+              "name": "street",
+              "type": "string"
+            },
+            {
+              "name": "city",
+              "type": "string"
+            },
+            {
+              "name": "state",
+              "type": "string"
+            },
+            {
+              "name": "zip",
+              "type": "string"
+            },
+            {
+              "name": "property_type",
+              "type": "string"
+            },
+            {
+              "name": "building_sf",
+              "type": "number"
+            },
+            {
+              "name": "year_built",
+              "type": "number"
+            },
+            {
+              "name": "owner_name",
+              "type": "string"
+            },
+            {
+              "name": "owner_mail_street",
+              "type": "string"
+            },
+            {
+              "name": "owner_mail_city",
+              "type": "string"
+            },
+            {
+              "name": "owner_mail_state",
+              "type": "string"
+            },
+            {
+              "name": "owner_mail_zip",
+              "type": "string"
+            },
+            {
+              "name": "owner_phone",
+              "type": "string"
+            },
+            {
+              "name": "source",
+              "type": "string"
+            },
+            {
+              "name": "batch_id",
+              "type": "string"
+            },
+            {
+              "name": "test_label",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "57e72f41-96af-4c7c-b3e5-5c31ca1a5ae9",
+      "name": "Clean",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "street_clean",
+              "type": "string",
+              "value": "={{ ($json.street||'').toUpperCase().replace(/[.,#]/g,' ').replace(/\\bSTREET\\b/g,'ST').replace(/\\bAVENUE\\b/g,'AVE').replace(/\\bBOULEVARD\\b/g,'BLVD').replace(/\\bROAD\\b/g,'RD').replace(/\\bDRIVE\\b/g,'DR').replace(/\\bSUITE\\b/g,'STE').replace(/\\s+/g,' ').trim() }}"
+            },
+            {
+              "id": "c2",
+              "name": "zip_clean",
+              "type": "string",
+              "value": "={{ (String($json.zip||'').match(/\\d{5}/)||[''])[0] }}"
+            },
+            {
+              "id": "c3",
+              "name": "owner_name_clean",
+              "type": "string",
+              "value": "={{ ($json.owner_name||'').replace(/L\\.L\\.C\\.?/gi,'LLC').replace(/,/g,'').replace(/\\s+/g,' ').trim() || 'Unknown Owner' }}"
+            },
+            {
+              "id": "c4",
+              "name": "owner_key",
+              "type": "string",
+              "value": "={{ ($json.owner_name||'').toUpperCase().replace(/[.,]/g,'').replace(/\\b(LLC|INC|CORP|CO|LP|LLP|LTD|TRUST)\\b/g,'').replace(/[^A-Z0-9 ]/g,' ').trim().replace(/\\s+/g,'-') || 'UNKNOWN-OWNER' }}"
+            },
+            {
+              "id": "c5",
+              "name": "is_entity",
+              "type": "boolean",
+              "value": "={{ /\\b(LLC|L\\.L\\.C|INC|CORP|LP|LLP|LTD|TRUST|HOLDINGS|PARTNERS|PROPERTIES)\\b/i.test($json.owner_name||'') }}"
+            },
+            {
+              "id": "c6",
+              "name": "phone_clean",
+              "type": "string",
+              "value": "={{ (d => d.length===10 ? '+1'+d : (d.length===11 && d[0]==='1' ? '+'+d : ''))(String($json.owner_phone||'').replace(/\\D/g,'')) }}"
+            },
+            {
+              "id": "c7",
+              "name": "started_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ca3b9d90-19da-4c58-b768-8bfec5ea16d4",
+      "name": "Dedupe in batch",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "operation": "removeDuplicateInputItems",
+        "compare": "selectedFields",
+        "fieldsToCompare": "apn"
+      }
+    },
+    {
+      "id": "8572d181-ba41-4d6b-aa55-2b1737220f22",
+      "name": "Flag review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "review_reason",
+              "type": "string",
+              "value": "={{ [ $json.owner_key==='UNKNOWN-OWNER' ? 'no owner' : '', !$json.owner_mail_street ? 'no mailing address' : '', ($json.owner_phone && !$json.phone_clean) ? 'bad phone' : '', !$json.zip_clean ? 'bad zip' : '' ].filter(Boolean).join('; ') }}"
+            },
+            {
+              "id": "f2",
+              "name": "needs_review",
+              "type": "boolean",
+              "value": "={{ [ $json.owner_key==='UNKNOWN-OWNER' ? 'no owner' : '', !$json.owner_mail_street ? 'no mailing address' : '', ($json.owner_phone && !$json.phone_clean) ? 'bad phone' : '', !$json.zip_clean ? 'bad zip' : '' ].filter(Boolean).length > 0 }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "069e685d-53a6-453d-b284-1ecd00b5f2cb",
+      "name": "Join owner id",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 2,
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferLast",
+              "mergeMode": "deepMerge"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "8f2d9251-3411-48f7-84be-fcec8dbd7334",
+      "name": "Upsert owner",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        440
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "account",
+        "operation": "upsert",
+        "externalId": "Owner_Key__c",
+        "externalIdValue": "={{ $json.owner_key }}",
+        "name": "={{ $json.owner_name_clean }}",
+        "additionalFields": {
+          "billingStreet": "={{ $json.owner_mail_street }}",
+          "billingCity": "={{ $json.owner_mail_city }}",
+          "billingState": "={{ undefined }}",
+          "billingPostalCode": "={{ $json.owner_mail_zip }}",
+          "phone": "={{ $json.phone_clean }}",
+          "customFieldsUi": {
+            "customFieldsValues": [
+              {
+                "fieldId": "Is_Entity__c",
+                "value": "={{ $json.is_entity }}"
+              },
+              {
+                "fieldId": "Source__c",
+                "value": "={{ $json.source }}"
+              },
+              {
+                "fieldId": "Test_Label__c",
+                "value": "={{ $json.test_label }}"
+              },
+              {
+                "fieldId": "BillingStateCode",
+                "value": "={{ ($json.owner_mail_state||'').toUpperCase() }}"
+              },
+              {
+                "fieldId": "BillingCountryCode",
+                "value": "US"
+              }
+            ]
+          }
+        }
+      },
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Salesforce Dev (sfcre)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3f91972d-3405-4013-b83a-11722fd28757",
+      "name": "Upsert property",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "customObject",
+        "operation": "upsert",
+        "customObject": "Property__c",
+        "externalId": "APN__c",
+        "externalIdValue": "={{ $json.apn }}",
+        "customFieldsUi": {
+          "customFieldsValues": [
+            {
+              "fieldId": "Name",
+              "value": "={{ $json.street_clean }}"
+            },
+            {
+              "fieldId": "Street__c",
+              "value": "={{ $json.street_clean }}"
+            },
+            {
+              "fieldId": "City__c",
+              "value": "={{ $json.city }}"
+            },
+            {
+              "fieldId": "State__c",
+              "value": "={{ ($json.state||'').toUpperCase() }}"
+            },
+            {
+              "fieldId": "Zip__c",
+              "value": "={{ $json.zip_clean }}"
+            },
+            {
+              "fieldId": "Property_Type__c",
+              "value": "={{ $json.property_type }}"
+            },
+            {
+              "fieldId": "Building_SF__c",
+              "value": "={{ $json.building_sf }}"
+            },
+            {
+              "fieldId": "Year_Built__c",
+              "value": "={{ $json.year_built }}"
+            },
+            {
+              "fieldId": "Owner__c",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "Needs_Review__c",
+              "value": "={{ $json.needs_review }}"
+            },
+            {
+              "fieldId": "Review_Reason__c",
+              "value": "={{ $json.review_reason }}"
+            },
+            {
+              "fieldId": "Source__c",
+              "value": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "Last_Synced__c",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "Test_Label__c",
+              "value": "={{ $json.test_label }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Salesforce Dev (sfcre)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3a832d64-1381-4047-b903-a602ed52420b",
+      "name": "Build summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "batch_id",
+              "type": "string",
+              "value": "={{ $('When called').first().json.batch_id }}"
+            },
+            {
+              "id": "s2",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $('When called').first().json.source }}"
+            },
+            {
+              "id": "s3",
+              "name": "rows_in",
+              "type": "number",
+              "value": "={{ $('When called').all().length }}"
+            },
+            {
+              "id": "s4",
+              "name": "rows_after_dedupe",
+              "type": "number",
+              "value": "={{ $('Dedupe in batch').all().length }}"
+            },
+            {
+              "id": "s5",
+              "name": "accounts_ok",
+              "type": "number",
+              "value": "={{ $('Upsert owner').all().filter(i => i.json.success === true).length }}"
+            },
+            {
+              "id": "s6",
+              "name": "properties_ok",
+              "type": "number",
+              "value": "={{ $('Upsert property').all().filter(i => i.json.success === true).length }}"
+            },
+            {
+              "id": "s7",
+              "name": "needs_review_count",
+              "type": "number",
+              "value": "={{ $('Flag review').all().filter(i => i.json.needs_review).length }}"
+            },
+            {
+              "id": "s8",
+              "name": "errors",
+              "type": "number",
+              "value": "={{ (($('Dedupe in batch').all().length - $('Upsert property').all().filter(i => i.json.success === true).length) + ($('Dedupe in batch').all().length - $('Upsert owner').all().filter(i => i.json.success === true).length)) }}"
+            },
+            {
+              "id": "s9",
+              "name": "status",
+              "type": "string",
+              "value": "={{ (($('Dedupe in batch').all().length - $('Upsert property').all().filter(i => i.json.success === true).length) + ($('Dedupe in batch').all().length - $('Upsert owner').all().filter(i => i.json.success === true).length)) === 0 ? 'Success' : ($('Upsert property').all().filter(i => i.json.success === true).length > 0 ? 'Partial' : 'Failed') }}"
+            },
+            {
+              "id": "s10",
+              "name": "error_sample",
+              "type": "string",
+              "value": "={{ JSON.stringify([...$('Upsert owner').all(), ...$('Upsert property').all()].filter(i => i.json.error).slice(0,3).map(i => (i.json.errorCode||'') + ': ' + (i.json.description||i.json.error))).slice(0,1900) }}"
+            },
+            {
+              "id": "s11",
+              "name": "started_at",
+              "type": "string",
+              "value": "={{ $('Clean').first().json.started_at }}"
+            },
+            {
+              "id": "s12",
+              "name": "finished_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "a9a00d27-e530-450f-bb5c-5edaa9ac0af6",
+      "name": "Write log",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        300
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "customObject",
+        "operation": "upsert",
+        "customObject": "Integration_Log__c",
+        "externalId": "Batch_Id__c",
+        "externalIdValue": "={{ $json.batch_id }}",
+        "customFieldsUi": {
+          "customFieldsValues": [
+            {
+              "fieldId": "Workflow__c",
+              "value": "sfcre-upsert"
+            },
+            {
+              "fieldId": "Source__c",
+              "value": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "Rows_In__c",
+              "value": "={{ $json.rows_in }}"
+            },
+            {
+              "fieldId": "Rows_After_Dedupe__c",
+              "value": "={{ $json.rows_after_dedupe }}"
+            },
+            {
+              "fieldId": "Accounts_Ok__c",
+              "value": "={{ $json.accounts_ok }}"
+            },
+            {
+              "fieldId": "Properties_Ok__c",
+              "value": "={{ $json.properties_ok }}"
+            },
+            {
+              "fieldId": "Needs_Review_Count__c",
+              "value": "={{ $json.needs_review_count }}"
+            },
+            {
+              "fieldId": "Errors__c",
+              "value": "={{ $json.errors }}"
+            },
+            {
+              "fieldId": "Status__c",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "fieldId": "Error_Sample__c",
+              "value": "={{ $json.error_sample }}"
+            },
+            {
+              "fieldId": "Started_At__c",
+              "value": "={{ $json.started_at }}"
+            },
+            {
+              "fieldId": "Finished_At__c",
+              "value": "={{ $json.finished_at }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "REPLACE_ME",
+          "name": "Salesforce Dev (sfcre)"
+        }
+      }
+    },
+    {
+      "id": "80427f44-7b4b-4461-9b60-6bb7fb986c65",
+      "name": "Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        2400,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $('Build summary').first().json.status }}",
+              "rightValue": "Failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "8078a7b2-9e89-4177-bd63-f4d01eac6257",
+      "name": "Stop",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        200
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "=Batch {{ $('Build summary').first().json.batch_id }}: 0 properties saved. Sample: {{ $('Build summary').first().json.error_sample }}"
+      }
+    },
+    {
+      "id": "ad73b215-ba28-4365-bcf3-55a60f94ad2d",
+      "name": "Return summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2640,
+        400
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "batch_id",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.batch_id }}"
+            },
+            {
+              "id": "r2",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.source }}"
+            },
+            {
+              "id": "r3",
+              "name": "rows_in",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.rows_in }}"
+            },
+            {
+              "id": "r4",
+              "name": "rows_after_dedupe",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.rows_after_dedupe }}"
+            },
+            {
+              "id": "r5",
+              "name": "accounts_ok",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.accounts_ok }}"
+            },
+            {
+              "id": "r6",
+              "name": "properties_ok",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.properties_ok }}"
+            },
+            {
+              "id": "r7",
+              "name": "needs_review_count",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.needs_review_count }}"
+            },
+            {
+              "id": "r8",
+              "name": "errors",
+              "type": "number",
+              "value": "={{ $('Build summary').first().json.errors }}"
+            },
+            {
+              "id": "r9",
+              "name": "status",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.status }}"
+            },
+            {
+              "id": "r10",
+              "name": "error_sample",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.error_sample }}"
+            },
+            {
+              "id": "r11",
+              "name": "started_at",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.started_at }}"
+            },
+            {
+              "id": "r12",
+              "name": "finished_at",
+              "type": "string",
+              "value": "={{ $('Build summary').first().json.finished_at }}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When called": {
+      "main": [
+        [
+          {
+            "node": "Clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean": {
+      "main": [
+        [
+          {
+            "node": "Dedupe in batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedupe in batch": {
+      "main": [
+        [
+          {
+            "node": "Flag review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag review": {
+      "main": [
+        [
+          {
+            "node": "Join owner id",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upsert owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join owner id": {
+      "main": [
+        [
+          {
+            "node": "Upsert property",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert owner": {
+      "main": [
+        [
+          {
+            "node": "Join owner id",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Upsert property": {
+      "main": [
+        [
+          {
+            "node": "Build summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build summary": {
+      "main": [
+        [
+          {
+            "node": "Write log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write log": {
+      "main": [
+        [
+          {
+            "node": "Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Failed?": {
+      "main": [
+        [
+          {
+            "node": "Stop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "WORKFLOW_ID_sfcre-error-handler"
+  },
+  "active": false
+}
