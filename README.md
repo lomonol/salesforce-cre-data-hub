@@ -1,4 +1,4 @@
-# Case Study: Salesforce CRE Data Hub
+# Salesforce CRE Data Hub
 
 **County property records are loaded into Salesforce every week as clean, de-duplicated owners and properties. Leases close to expiry become call tasks for a broker, who logs each call from the property page.**
 
